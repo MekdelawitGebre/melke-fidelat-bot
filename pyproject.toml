@@ -1,4 +1,14 @@
+[tool.poetry]
+name = "melke-fidelat-bot"
+version = "0.1.0"
+description = "Telegram bot"
+authors = ["Mekdelawit Gebre"]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 python-telegram-bot = "20.6"
 Pillow = "10.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
