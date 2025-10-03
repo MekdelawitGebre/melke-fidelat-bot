@@ -1,7 +1,9 @@
 import os
 from io import BytesIO
 from dotenv import load_dotenv
-load_dotenv()
+
+load_dotenv()  # Load environment variables from .env
+
 from PIL import Image, ImageDraw, ImageFont
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -12,9 +14,12 @@ from telegram.ext import (
 )
 
 # --- CONFIG ---
-
-
 TOKEN = os.getenv("TELEGRAM_TOKEN")
+if not TOKEN:
+    raise Exception("Please set TELEGRAM_TOKEN in your .env file")
+
+PORT = int(os.environ.get("PORT", 5000))  # Render provides PORT automatically
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")  # Set this in Render's environment
 
 FONTS_FOLDER = "fonts"
 IMAGE_SIZE = (800, 200)
@@ -42,7 +47,7 @@ user_data = {}
 
 # --- COMMANDS ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     if user_id not in user_data:
         user_data[user_id] = {
             "text": "Hello World!",
@@ -64,6 +69,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Welcome! Use the buttons below to customize your text image.",
         reply_markup=reply_markup,
     )
+
 
 # --- CALLBACK HANDLER ---
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -157,10 +163,21 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Created by Hanix."
         )
 
+
 # --- APPLICATION SETUP ---
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(callback_handler))
 
-print("✅ Bot is running with buttons...")
-app.run_polling()
+print("✅ Bot is ready for webhook deployment...")
+
+# --- RUN WEBHOOK ---
+if WEBHOOK_URL:
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=WEBHOOK_URL
+    )
+else:
+    # fallback to polling if webhook URL not set (local dev)
+    app.run_polling()
